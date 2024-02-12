@@ -1,7 +1,8 @@
 const express = require("express")
 const router = express.Router();
 
-const {getUser,updateUser,followUser,unFollowUser,blockUser,unBlockUser,BlockedUserList,deleteUser} = require("../controllers/User");
+const {getUser,updateUser,followUser,unFollowUser,
+    blockUser,unBlockUser,BlockedUserList,deleteUser,searchUser} = require("../controllers/User");
 
 //Get User
 router.get("/:userId",getUser);
@@ -26,6 +27,12 @@ router.get("/blocked/:userId",BlockedUserList)
 
 //Delete User
 router.delete("/delete/:userId",deleteUser);
+
+//Search User
+router.get("/search/:query",searchUser)
+
+//Update Profile Picture
+router.post("/")
 
 
 

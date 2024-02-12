@@ -21,7 +21,6 @@ exports.getUser = async (req,res,next) => {
     }
 
 }
-
 //Update User
 exports.updateUser = async (req,res,next) => {
     const {userId} = req.params;
@@ -43,7 +42,6 @@ exports.updateUser = async (req,res,next) => {
         next(error);
     }
 }
-
 //Follow User
 exports.followUser = async(req,res,next) =>{
     const {userId} = req.params;
@@ -83,9 +81,7 @@ exports.followUser = async(req,res,next) =>{
         next(error);
     }
 }
-
 //Unfollow User
-
 exports.unFollowUser = async (req,res,next) => {
     const {userId} = req.params;
     const {_id} = req.body
@@ -120,7 +116,6 @@ exports.unFollowUser = async (req,res,next) => {
         next(error);
     }
 }
-
 //Blocked User
 exports.blockUser = async (req, res, next) => {
     const { userId } = req.params;
@@ -157,7 +152,6 @@ exports.blockUser = async (req, res, next) => {
         next(error);
     }
 }
-
 //UNBLOCK USER
 exports.unBlockUser = async(req,res,next) => {
     const { userId } = req.params;
@@ -191,7 +185,6 @@ exports.unBlockUser = async(req,res,next) => {
 
     }
 }
-
 //Get Blocked User List
 exports.BlockedUserList = async(req,res,next) => {
     const { userId } = req.params;    
@@ -213,31 +206,115 @@ exports.BlockedUserList = async(req,res,next) => {
         next(error);
     }
 }
-
 //Delete User
-exports.deleteUser = async(req,res,next) => {
-    const { userId } = req.params;    
+exports.deleteUser = async (req, res, next) => {
+    const { userId } = req.params;
 
-    try{
+    try {
         const userToDelete = await User.findById(userId);
 
-        if(!userToDelete){
-            throw new CustomError("User Not Found",404);
+        if (!userToDelete) {
+            throw new CustomError("User Not Found", 404);
         }
 
-        await Post.deleteMany({user:userId});
-        await Post.deleteMany({"comments.user":userId});
-        await Post.deleteMany({"comments.replies.user":userId})
+        // Get the followers of the user to be deleted
+        const followersToUpdate = await User.find({ followUser: userId });
 
-        await Comment.deleteMany({user:userId});
-        await Story.deleteMany({user:userId});
-        await Post.updateMany({likes:userId},{$pull:{likes:userId}});
+        // Remove the user to be deleted from followers lists of users who are following the user to be deleted
+        await Promise.all(
+            followersToUpdate.map(async (follower) => {
+                follower.followUser = follower.followUser.filter(
+                    (followedUserId) => followedUserId.toString() !== userId
+                );
+                await follower.save();
+            })
+        );
 
-        await User.updateMany
+        // Update the followUser lists of users who are followed by the user to be deleted
+        await User.updateMany(
+            { followUser: userId },
+            { $pull: { followUser: userId } }
+        );
 
+        // Delete posts and comments associated with the user
+        await Post.deleteMany({ user: userId });
+        await Post.deleteMany({ "comments.user": userId });
+        await Post.deleteMany({ "comments.replies.user": userId });
+        await Comment.deleteMany({ user: userId });
+        await Story.deleteMany({ user: userId });
 
-    }
-    catch(error){
+        // Update users who are following the deleted user
+        await User.updateMany(
+            { _id: { $in: userToDelete.following } },
+            { $pull: { followUser: userId } }
+        );
+
+        // Update posts and comments to remove likes from the deleted user
+        await Comment.updateMany({}, { $pull: { likes: userId } });
+        await Comment.updateMany(
+            { "replies.likes": userId },
+            { $pull: { "replies.likes": userId } }
+        );
+        await Post.updateMany({}, { $pull: { likes: userId } });
+
+        // Remove the deleted user from reply comments
+        const replyComments = await Comment.find({ "replies.user": userId });
+
+        await Promise.all(
+            replyComments.map(async (comment) => {
+                comment.replies = comment.replies.filter(
+                    (reply) => reply.user.toString() !== userId
+                );
+                await comment.save();
+            })
+        );
+
+        // Finally, delete the user
+        await userToDelete.deleteOne();
+
+        res.status(200).json({
+            success: true,
+            message: "Everything Associated with User is Deleted Successfully",
+        });
+    } catch (error) {
         next(error);
     }
-}
+};
+// Search User
+exports.searchUser = async (req, res, next) => {
+    try {
+        // Extract query from request parameters
+        const { query } = req.params;
+
+        // Ensure query is provided
+        if (!query) {
+            throw new CustomError("Search query is required", 400);
+        }
+
+        // Search for users with provided query
+        const users = await User.find({
+            $or: [
+                { username: { $regex: new RegExp(query, 'i') } },
+                { fullname: { $regex: new RegExp(query, 'i') } }
+            ]
+        });
+
+        // Check if users were found
+        if (users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No users found with the provided query"
+            });
+        }
+
+        // Respond with found users
+        res.status(200).json({
+            success: true,
+            users,
+            message: "Users found successfully"
+        });
+    } catch (error) {
+        // Pass error to error handling middleware
+        next(error);
+    }
+};
