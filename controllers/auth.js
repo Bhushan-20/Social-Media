@@ -121,14 +121,19 @@ exports.fetchUser = async (req,res,next) => {
     const token = req.cookies.token
     JWT.verify(token,process.env.JWT_SECRET,{},async(err,data)=>{
         if(err){
-            throw new CustomError(err,404)
+            res.status(400).json({
+                success:false,
+                message:"No User is Logged In"
+            })
         }
         console.log(data)
         try{
             const id =data._id
             const user =  await User.findOne({_id:id})
-            console.log(user)
-            res.status(200).json(user);
+            res.status(200).json({
+                success:true,
+                user,
+            });
         }
         catch(error)
         {
