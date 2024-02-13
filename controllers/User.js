@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Post = require("../models/Post");
 const Comment = require("../models/Comment");
 const Story = require("../models/Story");
+require("dotenv").config();
 
 //Get User
 exports.getUser = async (req,res,next) => {
@@ -318,3 +319,49 @@ exports.searchUser = async (req, res, next) => {
         next(error);
     }
 };
+
+//Generate URL for File
+const generateFileUrl = (filename) => {
+    return process.env.PORT + `/uploads/${filename}`;
+}
+//Update Profile Picture
+exports.uploadProfilePicture = async (req, res, next) => {
+    const { userId } = req.params;
+    const { filename } = req.file;
+
+    try {
+        const user = await User.findByIdAndUpdate(userId, { profilePicture: generateFileUrl(filename) }, { new: true });
+        if (!user) {
+            throw new Error("User Not Found!");
+        }
+
+        console.log("Updated in DB")
+        res.status(200).json({
+            user,
+            message: "Profile Picture Updated Successfully"
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+//Update Cover Picture
+exports.uploadCoverPicture = async (req,res,next) => {
+    const {userId} = req.params;
+    const { filename } = req.file;
+
+    try{
+        const user = await User.findByIdAndUpdate(userId, { coverPicture: generateFileUrl(filename) }, { new: true });
+        if (!user) {
+            throw new Error("User Not Found!");
+        }
+        res.status(200).json({
+            user,
+            message: "Cover Picture Updated Successfully"
+        });
+    }
+    catch(error){
+        next(error);
+    }
+}
+
