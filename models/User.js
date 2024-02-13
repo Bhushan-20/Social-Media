@@ -32,6 +32,10 @@ const mongoose = require("mongoose");
         type:String,
         default:""
     },
+    coverPicture:{
+        type:String,
+        default:""
+    },
     posts:[{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Post"
