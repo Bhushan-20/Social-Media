@@ -2,7 +2,10 @@ const express = require("express")
 const router = express.Router();
 
 const {getUser,updateUser,followUser,unFollowUser,
-    blockUser,unBlockUser,BlockedUserList,deleteUser,searchUser} = require("../controllers/User");
+    blockUser,unBlockUser,BlockedUserList,deleteUser,searchUser,
+    uploadProfilePicture,uploadCoverPicture} = require("../controllers/User");
+const upload = require("../middlewares/upload");
+
 
 //Get User
 router.get("/:userId",getUser);
@@ -32,10 +35,10 @@ router.delete("/delete/:userId",deleteUser);
 router.get("/search/:query",searchUser)
 
 //Update Profile Picture
-router.post("/")
+router.put("/update-profile-picture/:userId", upload.single("profilePicture"), uploadProfilePicture);
 
-
-
+//Update Cover Picture
+router.put("/update-cover-picture/:userId", upload.single("coverPicture"), uploadCoverPicture);
 
 
 
