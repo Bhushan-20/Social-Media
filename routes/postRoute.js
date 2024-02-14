@@ -1,9 +1,9 @@
 const express = require("express")
 const router = express.Router();
-const upload = require("../middlewares/upload");
+const upload = require("../middlewares/uploadPost");
 
-const {createPost,createPostwithImages,
-        updatePost,getPosts,getUserPost,deletePost,likePost} = require("../controllers/Post");
+const {createPost,createPostwithImages,updatePost,getPosts,getUserPost,
+        deletePost,likePost,unLikePost} = require("../controllers/Post");
 
 //Create Post
 router.post("/create",createPost);
@@ -25,5 +25,8 @@ router.delete("/delete/:postId",deletePost)
 
 //Like Post
 router.post("/like/:postId",likePost)
+
+//Unlike Post
+router.post("/unlike/:postId",unLikePost)
 
 module.exports = router;

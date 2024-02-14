@@ -181,3 +181,33 @@ exports.likePost = async (req,res,next) => {
         next(error);
     }
 }
+
+//Unlike post
+exports.unLikePost = async (req,res,next) => {
+    const {postId} = req.params;
+    const {userId} = req.body;
+
+    try{
+        const post = await Post.findById(postId);
+        if(!post){
+            throw new CustomError("Post Not Find",404);
+        }
+        const user = await User.findById(userId);
+        if(!user){
+            throw new CustomError("User Not Found",404);
+        }
+        if(!post.likes.includes(userId)){
+            throw new CustomError("You have not Liked The Post");
+        }
+        post.likes = post.likes.filter(id=>id.toString()!==userId);
+        await post.save()
+        res.status(200).json({
+            success:true,
+            message:"Post disliked Successfully",
+            post
+        })
+
+    }catch(error){
+        next(error);
+    }
+}
