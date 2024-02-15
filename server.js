@@ -3,6 +3,7 @@ const app = express();
 const cookieParser = require('cookie-parser');
 const {errorHandler} = require("./middlewares/error");
 const path = require("path")
+const verifyToken = require("./middlewares/verifyTokens")
 
 
 require("dotenv").config();
@@ -20,16 +21,22 @@ const authroute = require("./routes/authroute");
 app.use("/api/v1/auth",authroute);
 
 const userRoute = require("./routes/userRoute");
-app.use("/api/v2/user",userRoute);
+app.use("/api/v2/user",verifyToken,userRoute);
 
 const postRoute = require("./routes/postRoute");
-app.use("/api/v3/post",postRoute);
+app.use("/api/v3/post",verifyToken,postRoute);
 
 const commentRoute = require("./routes/commentRoute");
-app.use("/api/v4/comment",commentRoute);
+app.use("/api/v4/comment",verifyToken,commentRoute);
 
 const storyRoute = require("./routes/storiesRoute");
-app.use("/api/v5/story",storyRoute);
+app.use("/api/v5/story",verifyToken,storyRoute);
+
+const conversationRoute = require("./routes/conversationRoute");
+app.use("/api/v6/conversation",verifyToken,conversationRoute);
+
+const messageRoute = require("./routes/messageRoute");
+app.use("/api/v7/message",verifyToken,messageRoute)
 
 //Database Connection
 const db = require("./config/database");
